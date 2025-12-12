@@ -1,0 +1,6 @@
+# Add Python dependencies here later:
+# sounddevice
+# scipy
+# pyttsx3
+# whisper
+# Flask
