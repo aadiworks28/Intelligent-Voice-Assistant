@@ -1,33 +1,43 @@
-import pyttsx3
-import simpleaudio as sa
-import time
 import os
+import time
 
+# -------------------------
+# Sound file paths
+# -------------------------
 SOUND_WAKE = "app/sounds/wake_beep.wav"
 SOUND_END = "app/sounds/end_beep.wav"
 
+
+# -------------------------
+# 1. Play wake sound
+# -------------------------
 def play_wake_sound():
     if os.path.exists(SOUND_WAKE):
-        sa.WaveObject.from_wave_file(SOUND_WAKE).play()
+        os.system(f"afplay '{SOUND_WAKE}' &")   # non-blocking
+    else:
+        print("[Warning] Wake beep not found.")
 
+
+# -------------------------
+# 2. Play end sound
+# -------------------------
 def play_end_sound():
     if os.path.exists(SOUND_END):
-        sa.WaveObject.from_wave_file(SOUND_END).play()
+        os.system(f"afplay '{SOUND_END}' &")
+    else:
+        print("[Warning] End beep not found.")
 
-def speak(text, pitch=1.0, rate=170, pause=0.0):
+
+# -------------------------
+# 3. Speak using macOS voice (Samantha)
+# -------------------------
+def speak(text, pause=0.0):
     print(f"Assistant: {text}")
 
-    engine = pyttsx3.init(driverName="nsss")
+    # optional pause before speaking
+    if pause > 0:
+        time.sleep(pause)
 
-    # Select Samantha
-    for v in engine.getProperty('voices'):
-        if "samantha" in v.id.lower():
-            engine.setProperty('voice', v.id)
-            break
-
-    engine.setProperty("rate", rate)
-
-    time.sleep(pause)
-    engine.say(text)
-    engine.runAndWait()
+    # Use macOS "say" command with Samantha
+    os.system(f'say -v Samantha "{text}"')
 
