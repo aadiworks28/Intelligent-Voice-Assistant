@@ -8,5 +8,5 @@ def transcribe_audio(filepath="samples/output.wav"):
     result = model.transcribe(filepath)
     print("Text:", result["text"])
 
-if __name__ == "__main__":
-    transcribe_audio()
+    return result["text"]   # <=== REQUIRED
+
