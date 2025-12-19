@@ -5,6 +5,32 @@ from wakeword import detect_wake_word
 from tts import speak, play_wake_sound, play_end_sound
 from ui import user_says, assistant_says, system_msg
 from mic_meter import show_mic_level
+import threading
+
+mic_lock = threading.Lock()
+
+def listen_with_meter(filename, duration):
+    if mic_lock.locked():
+        return  # Prevent overlapping meters
+
+    with mic_lock:
+        meter_thread = threading.Thread(
+            target=show_mic_level,
+            kwargs={"duration": duration},
+            daemon=True
+        )
+
+        record_thread = threading.Thread(
+            target=record_audio,
+            kwargs={"filename": filename, "duration": duration},
+            daemon=True
+        )
+
+        meter_thread.start()
+        record_thread.start()
+
+        record_thread.join()
+        meter_thread.join()
 
 
 
@@ -29,8 +55,8 @@ def assistant_loop():
         # ==================================================
         if not active_session:
             system_msg("Listening for wake word...")
-            show_mic_level(duration=3)
-            record_audio("samples/wake.wav", duration=3)
+            listen_with_meter("samples/wake.wav", duration=3)
+
             wake_text = transcribe_audio("samples/wake.wav")
 
             if not detect_wake_word(wake_text):
@@ -52,8 +78,7 @@ def assistant_loop():
         # ACTIVE SESSION MODE → COMMANDS
         # ==================================================
         system_msg("Listening for command...")
-        show_mic_level(duration=5)
-        record_audio("samples/command.wav", duration=5)
+        listen_with_meter("samples/command.wav", duration=5)
         command_text = transcribe_audio("samples/command.wav")
         user_says(command_text)
 
