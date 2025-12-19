@@ -7,7 +7,9 @@ from ui import user_says, assistant_says, system_msg
 from mic_meter import show_mic_level
 import threading
 
+
 mic_lock = threading.Lock()
+
 
 def listen_with_meter(filename, duration):
     if mic_lock.locked():
@@ -31,7 +33,6 @@ def listen_with_meter(filename, duration):
 
         record_thread.join()
         meter_thread.join()
-
 
 
 def assistant_loop():
@@ -79,6 +80,7 @@ def assistant_loop():
         # ==================================================
         system_msg("Listening for command...")
         listen_with_meter("samples/command.wav", duration=5)
+
         command_text = transcribe_audio("samples/command.wav")
         user_says(command_text)
 
