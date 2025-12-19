@@ -3,85 +3,98 @@ from asr import transcribe_audio
 from intent_engine import parse_intent, execute_intent
 from wakeword import detect_wake_word
 from tts import speak, play_wake_sound, play_end_sound
+from ui import user_says, assistant_says, system_msg
+from mic_meter import show_mic_level
+
 
 
 def assistant_loop():
     # -----------------------------
-    # Startup sound + announcement
+    # Startup
     # -----------------------------
     try:
         play_wake_sound()
     except:
-        print("[Warning] Startup sound failed.")
+        system_msg("Startup sound failed.")
 
     speak("Assistant activated. Say Zara to wake me.", pause=0.2)
-    print("Assistant: Ready and listening for wake word...\n")
+    system_msg("Assistant ready. Listening for wake word.")
+
+    active_session = False
 
     while True:
 
-        # -----------------------------
-        # 1. LISTEN FOR WAKE WORD
-        # -----------------------------
-        record_audio("samples/wake.wav", duration=3)
-        wake_text = transcribe_audio("samples/wake.wav")
+        # ==================================================
+        # IDLE MODE → WAIT FOR WAKE WORD
+        # ==================================================
+        if not active_session:
+            system_msg("Listening for wake word...")
+            show_mic_level(duration=3)
+            record_audio("samples/wake.wav", duration=3)
+            wake_text = transcribe_audio("samples/wake.wav")
 
-        print(f"Wake Text: {wake_text}")
+            if not detect_wake_word(wake_text):
+                continue
 
-        if not detect_wake_word(wake_text):
+            # Wake word detected
+            system_msg("Wake word detected.")
+            try:
+                play_wake_sound()
+            except:
+                system_msg("Wake beep error.")
+
+            speak("Yes, I am listening.", pause=0.1)
+            assistant_says("Entering active session.")
+            active_session = True
             continue
 
-        # Wake beep
-        try:
-            play_wake_sound()
-        except:
-            print("[Warning] Wake beep error.")
-
-        speak("Yes, I am listening.", pause=0.1)
-        print("Assistant: Wake word detected. Listening for command...\n")
-
-        # -----------------------------
-        # 2. LISTEN FOR COMMAND
-        # -----------------------------
+        # ==================================================
+        # ACTIVE SESSION MODE → COMMANDS
+        # ==================================================
+        system_msg("Listening for command...")
+        show_mic_level(duration=5)
         record_audio("samples/command.wav", duration=5)
         command_text = transcribe_audio("samples/command.wav")
+        user_says(command_text)
 
-        print(f"Command Text: {command_text}")
+        # Guard against silence / noise
+        if not command_text or len(command_text.split()) < 2:
+            speak("I didn't catch that. Please repeat.")
+            continue
 
         # -----------------------------
-        # 3. PARSE INTENT
+        # Parse intent
         # -----------------------------
         intent, payload = parse_intent(command_text)
-        print(f"Intent: {intent}, Payload: {payload}")
 
         # -----------------------------
-        # 4. EXECUTE INTENT
+        # Exit intent
         # -----------------------------
-        result = execute_intent(intent, payload)
-
-        # =============================
-        # EXIT INTENT (STOP)
-        # =============================
         if intent == "exit":
             speak("Goodbye. Turning off.", pause=0.1)
-            print("Assistant shutting down.\n")
+            assistant_says("Goodbye. Turning off.")
+            system_msg("Assistant stopped.")
 
             try:
                 play_end_sound()
             except:
-                print("[Warning] End beep error.")
+                system_msg("End beep error.")
 
-            break
+            active_session = False
+            system_msg("Back to wake-word mode.")
+            continue
 
-        # =============================
-        # NORMAL RESPONSE
-        # =============================
-        speak(result, pause=0.1)
-        print(f"Assistant: {result}")
+        # -----------------------------
+        # Execute intent
+        # -----------------------------
+        result = execute_intent(intent, payload)
+
+        if result:
+            speak(result, pause=0.1)
+            assistant_says(result)
 
         try:
             play_end_sound()
         except:
-            print("[Warning] End beep error.")
-
-        print()  # formatting blank line
+            system_msg("End beep error.")
 

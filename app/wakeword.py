@@ -1,19 +1,43 @@
+import difflib
+import re
+
+# Accepted wake-word variations
+WAKE_WORDS = [
+    "zara",
+    "sara",
+    "zahra",
+    "zora",
+    "zaraa"
+]
+
+SIMILARITY_THRESHOLD = 0.75
+
+
+def normalize(text):
+    """
+    Lowercase, remove punctuation, extra spaces
+    """
+    text = text.lower()
+    text = re.sub(r"[^a-z\s]", "", text)
+    return text.strip()
+
+
 def detect_wake_word(text):
-    """
-    Returns True if wake word 'zara' is detected in the text.
-    """
     if not text:
         return False
 
-    text = text.lower().strip()
+    text = normalize(text)
+    words = text.split()
 
-    wake_words = [
-        "zara",
-        "hey zara",
-        "hi zara",
-        "okay zara",
-        "hello zara"
-    ]
+    for word in words:
+        matches = difflib.get_close_matches(
+            word,
+            WAKE_WORDS,
+            n=1,
+            cutoff=SIMILARITY_THRESHOLD
+        )
+        if matches:
+            return True
 
-    return any(w in text for w in wake_words)
+    return False
 
