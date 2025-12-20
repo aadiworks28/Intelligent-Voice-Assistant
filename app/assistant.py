@@ -47,7 +47,11 @@ def assistant_loop():
     speak("Assistant activated. Say Zara to wake me.", pause=0.2)
     system_msg("Assistant ready. Listening for wake word.")
 
+    last_platform = None
     active_session = False
+    last_intent = None
+    last_payload = None
+    
     SESSION_TIMEOUT = 20 #seconds
     last_command_time = None
 
@@ -76,6 +80,11 @@ def assistant_loop():
             assistant_says("Entering active session.")
             active_session = True
             last_command_time = time.time()
+            last_platform = None       
+
+            last_intent = None
+            last_payload = None
+
             continue
 
         # -----------------------------
@@ -88,6 +97,12 @@ def assistant_loop():
 
             active_session = False
             last_command_time = None
+  
+            last_platform = None
+
+            last_intent = None
+            last_payload = None
+
             continue 
 
         # ==================================================
@@ -108,6 +123,16 @@ def assistant_loop():
         # Parse intent
         # -----------------------------
         intent, payload, confidence = parse_intent(command_text)
+
+        # -----------------------------
+        # Context-based search routing
+        # -----------------------------
+        if intent == "search" and last_platform == "youtube":
+            result = execute_intent("youtube_search", payload)
+            speak(result, pause=0.1)
+            assistant_says(result)
+            last_command_time = time.time()
+            continue
 
         # -----------------------------
         # Confidence check
@@ -133,6 +158,12 @@ def assistant_loop():
             active_session = False
             last_command_time = None
             system_msg("Back to wake-word mode.")
+
+            last_platform = None
+
+            last_intent = None
+            last_payload = None
+
             continue
 
         # -----------------------------
@@ -144,6 +175,9 @@ def assistant_loop():
             speak(result, pause=0.1)
             assistant_says(result)
             last_command_time = time.time()
+
+            if intent == "open" and payload in ["youtube", "google"]:
+                last_platform = payload            
 
         try:
             play_end_sound()

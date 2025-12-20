@@ -40,30 +40,39 @@ import webbrowser
 from datetime import datetime
 
 def execute_intent(intent, payload):
-
+        
     # EXIT returns a simple flag; assistant.py will handle speaking
     if intent == "exit":
         return "exit"
-
+        
     if intent == "open":
         if payload == "youtube":
             webbrowser.get("open -a Safari %s").open("https://youtube.com")
             return "Opening YouTube..."
-
+    
         if payload == "google":
             webbrowser.get("open -a Safari %s").open("https://google.com")
             return "Opening Google..."
-
+        
         if payload == "instagram":
             webbrowser.get("open -a Safari %s").open("https://instagram.com")
             return "Opening Instagram..."
-
+        
         return "Open what?"
 
+   
+    if intent == "youtube_search":
+        webbrowser.get("open -a Safari %s").open(
+            f"https://www.youtube.com/results?search_query={payload}"
+        )
+        return f"Searching YouTube for {payload}..."
+    
     if intent == "search":
-        webbrowser.get("open -a Safari %s").open(f"https://google.com/search?q={payload}")
+        webbrowser.get("open -a Safari %s").open(
+            f"https://google.com/search?q={payload}"
+        )
         return f"Searching for {payload}..."
-
+    
     if intent == "time":
         now = datetime.now().strftime("%H:%M")
         return f"The time is {now}."
@@ -71,10 +80,8 @@ def execute_intent(intent, payload):
     if intent == "date":
         today = datetime.now().strftime("%Y-%m-%d")
         return f"Today's date is {today}."
-
+    
     return "Sorry, I didn't understand that."
-
-
 
 
 
