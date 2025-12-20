@@ -92,7 +92,15 @@ def assistant_loop():
         # -----------------------------
         # Parse intent
         # -----------------------------
-        intent, payload = parse_intent(command_text)
+        intent, payload, confidence = parse_intent(command_text)
+
+        # -----------------------------
+        # Confidence check
+        # -----------------------------
+        if confidence < 0.6:
+            speak("I'm not sure I understood that. Could you please rephrase?")
+            assistant_says("Low confidence intent. Asking user to rephrase.")
+            continue   
 
         # -----------------------------
         # Exit intent
