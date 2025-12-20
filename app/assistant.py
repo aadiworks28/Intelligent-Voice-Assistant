@@ -6,7 +6,7 @@ from tts import speak, play_wake_sound, play_end_sound
 from ui import user_says, assistant_says, system_msg
 from mic_meter import show_mic_level
 import threading
-
+import time
 
 mic_lock = threading.Lock()
 
@@ -48,6 +48,8 @@ def assistant_loop():
     system_msg("Assistant ready. Listening for wake word.")
 
     active_session = False
+    SESSION_TIMEOUT = 20 #seconds
+    last_command_time = None
 
     while True:
 
@@ -73,7 +75,20 @@ def assistant_loop():
             speak("Yes, I am listening.", pause=0.1)
             assistant_says("Entering active session.")
             active_session = True
+            last_command_time = time.time()
             continue
+
+        # -----------------------------
+        # Session timeout check
+        # -----------------------------
+        if last_command_time and (time.time() - last_command_time) > SESSION_TIMEOUT:
+            speak("Going idle.")
+            assistant_says("Session timed out.")
+            system_msg("Returned to wake-word mode.")
+
+            active_session = False
+            last_command_time = None
+            continue 
 
         # ==================================================
         # ACTIVE SESSION MODE → COMMANDS
@@ -116,6 +131,7 @@ def assistant_loop():
                 system_msg("End beep error.")
 
             active_session = False
+            last_command_time = None
             system_msg("Back to wake-word mode.")
             continue
 
@@ -127,6 +143,7 @@ def assistant_loop():
         if result:
             speak(result, pause=0.1)
             assistant_says(result)
+            last_command_time = time.time()
 
         try:
             play_end_sound()
