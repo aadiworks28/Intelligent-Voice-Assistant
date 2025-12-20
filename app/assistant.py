@@ -51,8 +51,8 @@ def assistant_loop():
     active_session = False
     last_intent = None
     last_payload = None
-    
-    SESSION_TIMEOUT = 20 #seconds
+
+    SESSION_TIMEOUT = 20  # seconds
     last_command_time = None
 
     while True:
@@ -69,7 +69,6 @@ def assistant_loop():
             if not detect_wake_word(wake_text):
                 continue
 
-            # Wake word detected
             system_msg("Wake word detected.")
             try:
                 play_wake_sound()
@@ -78,13 +77,12 @@ def assistant_loop():
 
             speak("Yes, I am listening.", pause=0.1)
             assistant_says("Entering active session.")
+
             active_session = True
             last_command_time = time.time()
-            last_platform = None       
-
+            last_platform = None
             last_intent = None
             last_payload = None
-
             continue
 
         # -----------------------------
@@ -97,13 +95,10 @@ def assistant_loop():
 
             active_session = False
             last_command_time = None
-  
             last_platform = None
-
             last_intent = None
             last_payload = None
-
-            continue 
+            continue
 
         # ==================================================
         # ACTIVE SESSION MODE → COMMANDS
@@ -114,15 +109,37 @@ def assistant_loop():
         command_text = transcribe_audio("samples/command.wav")
         user_says(command_text)
 
-        # Guard against silence / noise
+        # -----------------------------
+        # Parse intent FIRST (FIX)
+        # -----------------------------
+        intent, payload, confidence = parse_intent(command_text)
+
+        # -----------------------------
+        # Noise & filler filtering
+        # -----------------------------
+        NOISE_WORDS = {
+            "uh", "um", "hmm", "huh", "ah", "okay", "ok",
+            "yes", "yeah", "no", "please", "hey", "hi",
+        }
+        words = command_text.lower().split()
+
+        if intent != "exit":
+            if len(words) <= 1 or all(w in NOISE_WORDS for w in words):
+                speak("I didn't catch a command. Please try again.")
+                assistant_says("Ignored noise / filler input.")
+                continue
+
         if not command_text or len(command_text.split()) < 2:
             speak("I didn't catch that. Please repeat.")
             continue
 
         # -----------------------------
-        # Parse intent
+        # Open intent without payload
         # -----------------------------
-        intent, payload, confidence = parse_intent(command_text)
+        if intent == "open" and payload is None:
+            speak("Which app should I open?")
+            assistant_says("Open intent without target.")
+            continue
 
         # -----------------------------
         # Context-based search routing
@@ -137,10 +154,18 @@ def assistant_loop():
         # -----------------------------
         # Confidence check
         # -----------------------------
-        if confidence < 0.6:
-            speak("I'm not sure I understood that. Could you please rephrase?")
-            assistant_says("Low confidence intent. Asking user to rephrase.")
-            continue   
+        if confidence < 0.6 and len(words) > 1:
+            speak("I'm not sure I understood that. Could you rephrase?")
+            assistant_says("Low confidence intent.")
+            continue
+
+        # -----------------------------
+        # Empty payload protection
+        # -----------------------------
+        if intent == "search" and not payload:
+            speak("What should I search for?")
+            assistant_says("Search intent without query.")
+            continue
 
         # -----------------------------
         # Exit intent
@@ -158,12 +183,9 @@ def assistant_loop():
             active_session = False
             last_command_time = None
             system_msg("Back to wake-word mode.")
-
             last_platform = None
-
             last_intent = None
             last_payload = None
-
             continue
 
         # -----------------------------
@@ -177,7 +199,7 @@ def assistant_loop():
             last_command_time = time.time()
 
             if intent == "open" and payload in ["youtube", "google"]:
-                last_platform = payload            
+                last_platform = payload
 
         try:
             play_end_sound()
