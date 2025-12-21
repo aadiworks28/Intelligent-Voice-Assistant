@@ -191,7 +191,10 @@ def assistant_loop():
         # -----------------------------
         # Execute intent
         # -----------------------------
-        result = execute_intent(intent, payload)
+        if intent == "unknown":
+            result = "I didn't understand that yet."
+        else:
+            result = execute_intent(intent, payload) 
 
         if result:
             speak(result, pause=0.1)
