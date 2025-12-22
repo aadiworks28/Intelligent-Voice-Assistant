@@ -8,6 +8,12 @@ def parse_intent(text):
     if "bye" in text or "goodbye" in text or "stop" in text or "exit" in text:
         return ("exit", None, 0.99)
 
+    # REMEMBER NAME (persistent memory)
+    if "name is" in text:
+        name = text.split("name is")[-1].strip()
+        if name:
+            return ("remember_name", name, 0.95)
+
     # OPEN commands
     if "open" in text:
         if "youtube" in text:
@@ -34,6 +40,28 @@ def parse_intent(text):
         return ("date", None, 0.90)
 
     return ("unknown", None, 0.30)
+
+    # NAME SPELLING CORRECTION
+    if "spelled" in text:
+        cleaned = (
+            text.replace("spelled", "")
+            .replace("-", " ")
+            .replace(",", " ")
+            .strip()
+        )
+
+        letters = cleaned.split()
+        if all(len(ch) == 1 for ch in letters):
+            name = "".join(letters).title()
+            return ("correct_name", name, 0.99)
+
+
+    # NAME LEARNING
+    if "name is" in text:
+        name = text.split("name is")[-1].strip()
+        if name:
+            return ("remember_name", name, 0.95)
+   
 
 
 import webbrowser

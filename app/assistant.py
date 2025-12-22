@@ -5,6 +5,7 @@ from wakeword import detect_wake_word
 from tts import speak, play_wake_sound, play_end_sound
 from ui import user_says, assistant_says, system_msg
 from mic_meter import show_mic_level
+from memory import load_memory, save_memory
 import threading
 import time
 
@@ -43,19 +44,27 @@ def assistant_loop():
     # -----------------------------
     # Startup
     # -----------------------------
+   
     try:
         play_wake_sound()
     except:
         system_msg("Startup sound failed.")
 
-    speak("Assistant activated. Say Zara to wake me.", pause=0.2)
+    memory = load_memory()
+
+    name = memory.get("user_name")
+    if name:
+        speak(f"Assistant activated. Hello {name}. Say Zara to wake me.", pause=0.2)
+    else:
+        speak("Assistant activated. Say Zara to wake me.", pause=0.2)
+
     system_msg("Assistant ready. Listening for wake word.")
+
  
     last_platform, last_intent, last_payload, last_command_time = reset_session_state()
 
     active_session = False
     command_history = []
-
 
     SESSION_TIMEOUT = 20  # seconds
  
@@ -86,7 +95,10 @@ def assistant_loop():
 
             active_session = True
             last_command_time = time.time()
-            last_platform, last_intent, last_payload = reset_session_state()
+            last_platform = None
+            last_intent = None
+            last_payload = None
+
 
             continue
 
@@ -107,19 +119,37 @@ def assistant_loop():
         # ACTIVE SESSION MODE → COMMANDS
         # ==================================================
         system_msg("Listening for command...")
-        listen_with_meter("samples/command.wav", duration=5)
+        listen_with_meter("samples/command.wav", duration=7)
 
         command_text = transcribe_audio("samples/command.wav")
-        command_text = command_text.strip().lower()
- 
+        command_text = (
+            command_text
+            .lower()
+            .replace(".", "")
+            .replace(",", "")
+            .strip()
+        ) 
         user_says(command_text)
         command_history.append(command_text)
-
 
         # -----------------------------
         # Parse intent FIRST (FIX)
         # -----------------------------
         intent, payload, confidence = parse_intent(command_text)
+
+        # -----------------------------
+        # Correct stored name  
+        # -----------------------------
+        if intent == "correct_name":
+            memory["user_name"] = payload
+            save_memory(memory)
+            
+            speak(f"Thanks for correcting me. I'll remember your name as {payload}.")
+            assistant_says(f"Corrected name to: {payload}")
+            
+            last_command_time = time.time()
+            continue
+
 
         # -----------------------------
         # Noise & filler filtering
@@ -161,7 +191,7 @@ def assistant_loop():
         # -----------------------------
         # Confidence check
         # -----------------------------
-        if confidence < 0.6 and len(words) > 1:
+        if intent not in ["remember_name"] and confidence < 0.6 and len(words) > 1:
             speak("I'm not sure I understood that. Could you rephrase?")
             assistant_says("Low confidence intent.")
             continue
@@ -194,6 +224,20 @@ def assistant_loop():
             continue
 
         # -----------------------------
+        # Remember user's name (PERSISTENT MEMORY)
+        # -----------------------------
+        if intent == "remember_name":
+            memory["user_name"] = payload.title()
+            save_memory(memory)
+
+            speak(f"Got it. I'll remember your name, {payload.title()}.")
+            assistant_says(f"Saved name: {payload.title()}")
+
+            last_command_time = time.time()
+            continue
+
+
+        # -----------------------------
         # Execute intent
         # -----------------------------
         if intent == "unknown":
@@ -202,6 +246,9 @@ def assistant_loop():
             result = execute_intent(intent, payload) 
 
         if result:
+            name = memory.get("user_name")
+            if name and "I" in result:
+                result = result.replace("I", f"I, {name},")
             speak(result, pause=0.1)
             assistant_says(result)
             last_command_time = time.time()

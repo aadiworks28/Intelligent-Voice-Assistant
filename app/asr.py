@@ -1,7 +1,7 @@
 import whisper
 
 print("Loading Whisper model once...")
-model = whisper.load_model("base")
+model = whisper.load_model("small")
 
 def transcribe_audio(filepath):
     print("Transcribing...")
