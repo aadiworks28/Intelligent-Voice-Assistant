@@ -8,6 +8,10 @@ from mic_meter import show_mic_level
 import threading
 import time
 
+def reset_session_state():
+    return None, None, None, None
+
+
 mic_lock = threading.Lock()
 
 
@@ -46,17 +50,15 @@ def assistant_loop():
 
     speak("Assistant activated. Say Zara to wake me.", pause=0.2)
     system_msg("Assistant ready. Listening for wake word.")
+ 
+    last_platform, last_intent, last_payload, last_command_time = reset_session_state()
 
-    last_platform = None
     active_session = False
-    last_intent = None
-    last_payload = None
     command_history = []
 
 
     SESSION_TIMEOUT = 20  # seconds
-    last_command_time = None
-
+ 
     while True:
 
         # ==================================================
@@ -84,9 +86,8 @@ def assistant_loop():
 
             active_session = True
             last_command_time = time.time()
-            last_platform = None
-            last_intent = None
-            last_payload = None
+            last_platform, last_intent, last_payload = reset_session_state()
+
             continue
 
         # -----------------------------
@@ -98,10 +99,8 @@ def assistant_loop():
             system_msg("Returned to wake-word mode.")
 
             active_session = False
-            last_command_time = None
-            last_platform = None
-            last_intent = None
-            last_payload = None
+            last_platform, last_intent, last_payload, last_command_time = reset_session_state()
+
             continue
 
         # ==================================================
@@ -189,11 +188,9 @@ def assistant_loop():
                 system_msg("End beep error.")
 
             active_session = False
-            last_command_time = None
             system_msg("Back to wake-word mode.")
-            last_platform = None
-            last_intent = None
-            last_payload = None
+            last_platform, last_intent, last_payload, last_command_time = reset_session_state()
+
             continue
 
         # -----------------------------
