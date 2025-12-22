@@ -67,6 +67,8 @@ def assistant_loop():
             listen_with_meter("samples/wake.wav", duration=3)
 
             wake_text = transcribe_audio("samples/wake.wav")
+            wake_text = wake_text.strip().lower()
+
 
             if not detect_wake_word(wake_text):
                 continue
@@ -109,6 +111,8 @@ def assistant_loop():
         listen_with_meter("samples/command.wav", duration=5)
 
         command_text = transcribe_audio("samples/command.wav")
+        command_text = command_text.strip().lower()
+ 
         user_says(command_text)
         command_history.append(command_text)
 
