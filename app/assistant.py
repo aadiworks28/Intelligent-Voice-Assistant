@@ -51,6 +51,8 @@ def assistant_loop():
     active_session = False
     last_intent = None
     last_payload = None
+    command_history = []
+
 
     SESSION_TIMEOUT = 20  # seconds
     last_command_time = None
@@ -108,6 +110,8 @@ def assistant_loop():
 
         command_text = transcribe_audio("samples/command.wav")
         user_says(command_text)
+        command_history.append(command_text)
+
 
         # -----------------------------
         # Parse intent FIRST (FIX)
