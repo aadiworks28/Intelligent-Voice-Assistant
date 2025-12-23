@@ -19,5 +19,33 @@
     "trigger_time": "2025-12-23 23:08",
     "message": "Wake up",
     "active": true
+  },
+  {
+    "id": "ef7b4068-2361-4f29-a178-d9773a4c4491",
+    "type": "reminder",
+    "trigger_time": "2025-12-23 23:47",
+    "message": "in 2 minutes to drink water",
+    "active": false
+  },
+  {
+    "id": "9cfe97bd-e11b-4927-bde6-ba2a79a52b1a",
+    "type": "reminder",
+    "trigger_time": "2025-12-23 23:50",
+    "message": "in 1 minute to drink water",
+    "active": false
+  },
+  {
+    "id": "1543746b-bae9-41c6-a21e-a06fded0d508",
+    "type": "alarm",
+    "trigger_time": "2025-12-23 23:52",
+    "message": "Wake up",
+    "active": false
+  },
+  {
+    "id": "65d7c983-a700-4d0d-989f-24c050614bfc",
+    "type": "reminder",
+    "trigger_time": "2025-12-23 23:54",
+    "message": "in 1 minute to drink water",
+    "active": false
   }
 ]

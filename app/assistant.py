@@ -1,3 +1,4 @@
+from llm_ollama import ask_ollama
 from recorder import record_audio
 from asr import transcribe_audio
 from intent_engine import parse_intent, execute_intent
@@ -14,9 +15,6 @@ import time
 
 def reset_session_state():
     return None, None, None, None
-
-
-mic_lock = threading.Lock()
 
 
 def listen_with_meter(filename, duration):
@@ -147,7 +145,7 @@ def assistant_loop():
             assistant_says("Ignored noise / filler input.")
             continue
 
-        if intent not in ["remember_name", "correct_name"] and confidence < 0.6:
+        if intent not in ["remember_name", "correct_name", "unknown"] and confidence < 0.6:
             speak("I'm not sure I understood that. Could you rephrase?")
             assistant_says("Low confidence intent.")
             continue
@@ -169,7 +167,10 @@ def assistant_loop():
             assistant_says(result)
             continue
 
-        result = "I didn't understand that yet." if intent == "unknown" else execute_intent(intent, payload)
+        if intent == "unknown":
+            result = ask_ollama(command_text)
+        else:
+            result = execute_intent(intent, payload)
 
         if result:
             last_command_time = time.time()
