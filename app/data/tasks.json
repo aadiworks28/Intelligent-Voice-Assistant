@@ -1,0 +1,23 @@
+[
+  {
+    "id": "65dc078d-31ad-4afa-b597-5d5b070fcea3",
+    "type": "reminder",
+    "trigger_time": "2025-12-23 22:40",
+    "message": "in 1 minute",
+    "active": false
+  },
+  {
+    "id": "685fe99f-6029-4dd7-8f2e-642e56450567",
+    "type": "reminder",
+    "trigger_time": "2025-12-23 22:45",
+    "message": "in 1 minute",
+    "active": false
+  },
+  {
+    "id": "75424203-cf02-4639-bffa-113fa71b093c",
+    "type": "alarm",
+    "trigger_time": "2025-12-23 23:08",
+    "message": "Wake up",
+    "active": true
+  }
+]

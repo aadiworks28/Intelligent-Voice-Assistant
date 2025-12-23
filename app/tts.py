@@ -41,3 +41,9 @@ def speak(text, pause=0.0):
     # Use macOS "say" command with Samantha
     os.system(f'say -v Samantha "{text}"')
 
+def play_alarm_sound():
+    os.system("afplay 'app/sounds/alarm.wav' &")
+
+def play_reminder_sound():
+    os.system("afplay 'app/sounds/reminder.wav' &")
+

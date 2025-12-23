@@ -4,8 +4,10 @@ from intent_engine import parse_intent, execute_intent
 from wakeword import detect_wake_word
 from tts import speak, play_wake_sound, play_end_sound
 from ui import user_says, assistant_says, system_msg
-from mic_meter import show_mic_level
 from memory import load_memory, save_memory
+from tasks import add_task, deactivate_all
+from scheduler import scheduler_loop
+
 import threading
 import time
 
@@ -18,23 +20,7 @@ mic_lock = threading.Lock()
 
 
 def listen_with_meter(filename, duration):
-    if mic_lock.locked():
-        return
-
-    with mic_lock:
-        threading.Thread(
-            target=show_mic_level,
-            kwargs={"duration": duration},
-            daemon=True
-        ).start()
-
-        threading.Thread(
-            target=record_audio,
-            kwargs={"filename": filename, "duration": duration},
-            daemon=True
-        ).start()
-
-        time.sleep(duration)
+    record_audio(filename=filename, duration=duration)
 
 
 def assistant_loop():
@@ -53,32 +39,28 @@ def assistant_loop():
 
     system_msg("Assistant ready. Listening for wake word.")
 
+    threading.Thread(target=scheduler_loop, daemon=True).start()
+
     last_platform, last_intent, last_payload, last_command_time = reset_session_state()
     active_session = False
-
     SESSION_TIMEOUT = 20
 
     while True:
 
         if not active_session:
             system_msg("Listening for wake word...")
-            listen_with_meter("samples/wake.wav", duration=3)
+            listen_with_meter("samples/wake.wav", 3)
 
             wake_text = transcribe_audio("samples/wake.wav").lower().strip()
-
             if not detect_wake_word(wake_text):
                 continue
 
-            try:
-                play_wake_sound()
-            except:
-                pass
-
+            last_command_time = time.time()
+            play_wake_sound()
             speak("Yes, I am listening.", pause=0.1)
             assistant_says("Entering active session.")
 
             active_session = True
-            last_command_time = time.time()
             last_platform, last_intent, last_payload = None, None, None
             continue
 
@@ -90,7 +72,7 @@ def assistant_loop():
             continue
 
         system_msg("Listening for command...")
-        listen_with_meter("samples/command.wav", duration=7)
+        listen_with_meter("samples/command.wav", 7)
 
         command_text = (
             transcribe_audio("samples/command.wav")
@@ -103,8 +85,8 @@ def assistant_loop():
         user_says(command_text)
 
         intent, payload, confidence = parse_intent(command_text)
-
         words = command_text.split()
+
         NOISE_WORDS = {
             "uh", "um", "hmm", "huh", "ah",
             "okay", "ok", "yes", "yeah",
@@ -114,11 +96,7 @@ def assistant_loop():
         if intent == "exit":
             speak("Goodbye. Turning off.", pause=0.1)
             assistant_says("Goodbye. Turning off.")
-            try:
-                play_end_sound()
-            except:
-                pass
-
+            play_end_sound()
             active_session = False
             last_platform, last_intent, last_payload, last_command_time = reset_session_state()
             continue
@@ -126,17 +104,42 @@ def assistant_loop():
         if intent == "correct_name":
             memory["user_name"] = payload
             save_memory(memory)
+            last_command_time = time.time()
             speak(f"Thanks for correcting me. I'll remember your name as {payload}.")
             assistant_says(f"Corrected name to: {payload}")
-            last_command_time = time.time()
             continue
 
         if intent == "remember_name":
             memory["user_name"] = payload.title()
             save_memory(memory)
+            last_command_time = time.time()
             speak(f"Got it. I'll remember your name, {payload.title()}.")
             assistant_says(f"Saved name: {payload.title()}")
+            continue
+
+        if intent == "set_alarm":
+            add_task("alarm", payload, "Wake up")
             last_command_time = time.time()
+            speak("Alarm set.")
+            continue
+
+        if intent == "set_reminder":
+            trigger_time, message = payload
+            add_task("reminder", trigger_time, message)
+            last_command_time = time.time()
+            speak("Reminder set.")
+            continue
+
+        if intent == "cancel_alarm":
+            deactivate_all("alarm")
+            last_command_time = time.time()
+            speak("All alarms cancelled.")
+            continue
+
+        if intent == "cancel_reminder":
+            deactivate_all("reminder")
+            last_command_time = time.time()
+            speak("All reminders cancelled.")
             continue
 
         if not words or all(w in NOISE_WORDS for w in words):
@@ -161,26 +164,20 @@ def assistant_loop():
 
         if intent == "search" and last_platform == "youtube":
             result = execute_intent("youtube_search", payload)
+            last_command_time = time.time()
             speak(result)
             assistant_says(result)
-            last_command_time = time.time()
             continue
 
-        if intent == "unknown":
-            result = "I didn't understand that yet."
-        else:
-            result = execute_intent(intent, payload)
+        result = "I didn't understand that yet." if intent == "unknown" else execute_intent(intent, payload)
 
         if result:
+            last_command_time = time.time()
             speak(result)
             assistant_says(result)
-            last_command_time = time.time()
 
             if intent == "open" and payload in ["youtube", "google"]:
                 last_platform = payload
 
-        try:
-            play_end_sound()
-        except:
-            pass
+        play_end_sound()
 
