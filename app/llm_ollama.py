@@ -1,26 +1,34 @@
 import subprocess
 
-def ask_ollama(user_text):
-    prompt = f"Answer concisely and clearly:\n{user_text}"
+def ask_ollama(prompt):
+    prompt = f"Answer concisely and clearly:\n{prompt}"
 
     try:
-        result = subprocess.run(
-            ["ollama", "run", "llama3", prompt],
-            capture_output=True,
-            text=True,
-            timeout=180
+        process = subprocess.Popen(
+            ["ollama", "run", "mistral", prompt],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
         )
 
-        output = result.stdout.strip()
-        if not output:
+        full_response = ""
+
+        for line in process.stdout:
+            line = line.strip()
+            if not line:
+                continue
+
+            full_response += line + " "
+            print(line, end=" ", flush=True)
+
+        process.wait()
+
+        if not full_response.strip():
             return "I didn't get a response."
 
-        return output
-
-    except subprocess.TimeoutExpired:
-        return "I'm still thinking. Please try again."
+        return full_response.strip()
 
     except Exception as e:
-        print("Ollama error:", e)
+        print("Ollama streaming error:", e)
         return "I'm having trouble thinking right now."
 
