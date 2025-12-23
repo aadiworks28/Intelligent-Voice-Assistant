@@ -8,6 +8,22 @@ def parse_intent(text):
     if "bye" in text or "goodbye" in text or "stop" in text or "exit" in text:
         return ("exit", None, 0.99)
 
+    # NAME SPELLING CORRECTION (must come BEFORE name learning)
+    if "spelled" in text:
+        after = text.split("spelled", 1)[-1].strip()
+
+        after = (
+            after.replace("-", " ")
+                 .replace(",", " ")
+                 .replace(".", "")
+        )
+
+        letters = after.split()
+
+        if letters and all(len(ch) == 1 and ch.isalpha() for ch in letters):
+            name = "".join(letters).title()
+            return ("correct_name", name, 0.99)
+
     # REMEMBER NAME (persistent memory)
     if "name is" in text:
         name = text.split("name is")[-1].strip()
@@ -22,7 +38,7 @@ def parse_intent(text):
             return ("open", "google", 0.95)
         if "instagram" in text:
             return ("open", "instagram", 0.95)
-        return ("open", None, 0.60)   # vague open
+        return ("open", None, 0.60)
 
     # SEARCH
     if "search" in text:
@@ -40,27 +56,6 @@ def parse_intent(text):
         return ("date", None, 0.90)
 
     return ("unknown", None, 0.30)
-
-    # NAME SPELLING CORRECTION
-    if "spelled" in text:
-        cleaned = (
-            text.replace("spelled", "")
-            .replace("-", " ")
-            .replace(",", " ")
-            .strip()
-        )
-
-        letters = cleaned.split()
-        if all(len(ch) == 1 for ch in letters):
-            name = "".join(letters).title()
-            return ("correct_name", name, 0.99)
-
-
-    # NAME LEARNING
-    if "name is" in text:
-        name = text.split("name is")[-1].strip()
-        if name:
-            return ("remember_name", name, 0.95)
    
 
 
