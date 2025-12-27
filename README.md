@@ -1,22 +1,52 @@
-# Intelligent Voice Assistant (MVP)
+Zara – Intelligent Voice Assistant
+Zara is a local, offline-first intelligent voice assistant built in Python.
+It uses speech recognition, intent parsing, and a locally running LLM (Ollama) to respond to voice commands in real time.
+The project focuses on system integration rather than just AI — combining audio input, background scheduling, UI state handling, and local inference.
 
-This project is a beginner-friendly intelligent voice assistant built using Python.
-It supports:
-- Microphone audio recording
-- Speech-to-text (ASR)
-- Intent recognition
-- Command execution
-- Text-to-speech (TTS) replies
+Features: -
+- Wake-word based activation (“Zara”)
+- Real-time microphone input with visual listening meter
+- Speech-to-text using Whisper
+- Intent detection for common commands
+- Fallback to Ollama for open-ended questions
+- Streaming LLM responses (no long waiting)
+- Floating UI pill showing assistant state (idle / listening / thinking / speaking)
+- Alarms and reminders with background scheduler
+- Fully local execution (no cloud APIs required)
 
-## Project Status
-Day 0: Repository setup and initial skeleton.
+Tech Stack: - 
+- Python
+- Whisper for speech recognition
+- Ollama for local LLM responses
+- FastAPI for internal state communication
+- PyQt6 for lightweight UI
+- SoundDevice / NumPy / SciPy for audio processing
 
-## Developer
-Aadi Jain (aadiworks28)
+How It Works (High Level): - 
+- Zara listens for a wake word
+- Records voice input after activation
+- Transcribes audio using Whisper
+- Tries to resolve intent locally
+- Falls back to Ollama for general questions
+- Speaks the response and updates UI state
 
-This is a solo project for learning:
-- Git & GitHub  
-- Python project structure  
-- Speech recognition (ASR)  
-- Intent processing  
-- TTS and simple automation  
+Running the Project: - 
+1. Start Ollama (in a separate terminal): ollama serve
+Make sure a model is pulled, for example: ollama pull llama3
+
+2. Install Python dependencies
+pip install -r requirements.txt
+
+3. Run the assistant
+python -m app.main
+
+Say “Zara” to activate.
+
+Notes: -
+- Ollama runs as a background service and is not installed via pip
+- The macOS .app bundle build was attempted but intentionally excluded from final submission due to platform limitations
+- The assistant is designed for local experimentation and learning, not production deployment
+
+Project Status: -
+- Core functionality is complete and stable.
+- Future improvements may include better intent confidence handling and cross-platform UI packaging.
